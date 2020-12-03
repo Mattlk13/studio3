@@ -3,7 +3,7 @@
 properties([
 	buildDiscarder(logRotator(numToKeepStr: '15', artifactNumToKeepStr: '1')),
 	// specify projects to allow to copy artifacts with a comma-separated list.
-	copyArtifactPermission("/appcelerator-studio/titanium_studio/${env.BRANCH_NAME},../Pydev/${env.BRANCH_NAME},../studio3-ruby/${env.BRANCH_NAME},../studio3-php/${env.BRANCH_NAME},../studio3-rcp/${env.BRANCH_NAME}"),
+	copyArtifactPermission("/appcelerator-studio/titanium_studio/*,../Pydev/*,../studio3-ruby/*,../studio3-php/*,../studio3-rcp/*"),
 ])
 // Set after copying upstream artifacts
 // Tells maven where to assume a p2 repo holding the sftp libraries would be
@@ -49,6 +49,10 @@ timestamps {
 							timeout(30) {
 								sh "mvn -Dsftp.p2.repo.url=${sftpURL} -Dmaven.test.failure.ignore=true -Djarsigner.keypass=${env.STOREPASS} -Djarsigner.storepass=${env.STOREPASS} -Djarsigner.keystore=${env.KEYSTORE} clean verify"
 							}
+						} catch (err) {
+							sleep(10) // try and wait for log to finish writing?
+							archiveArtifacts artifacts: 'tests/*/target/work/data/.metadata/.log,tests/*/target/work/configuration/*.log'
+							throw err
 						} finally {
 							// record tests even if we failed
 							junit 'tests/*/target/surefire-reports/TEST-*.xml'
